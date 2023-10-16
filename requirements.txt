@@ -1,0 +1,15 @@
+# TODO use poetry for dependencies management
+openai
+langchain
+python-dotenv
+selenium
+unstructured
+tiktoken
+streamlit
+transformers
+huggingface-hub
+sentence-transformers
+unstructured
+faiss-cpu
+pymupdf
+pickle
