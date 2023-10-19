@@ -74,12 +74,12 @@ def generate_assistant_response(augmented_query):
     return full_response
 
 
-def get_relevant_contexts(query, embeddings):
+def get_relevant_contexts(query):
     pinecone.init(
         api_key=PINECONE_API_KEY,
         environment=PINECONE_API_ENV
     )
-    docsearch = Pinecone.from_existing_index(index_name, embeddings)
+    docsearch = Pinecone.from_existing_index(index_name, get_embeddings())
     docs = docsearch.similarity_search(query)
     context = ""
     for doc in docs:
@@ -126,12 +126,11 @@ def page_setup():
 def main():
     page_setup()
     display_existing_messages()
-    embeddings = get_embeddings()
+
     query = st.chat_input("Ask me about my skills and expertise!")
     if query:
-
         add_user_message_to_session(query)
-        contexts = get_relevant_contexts(query, embeddings)
+        contexts = get_relevant_contexts(query)
         augmented_query = augment_query(contexts, query)
         generate_assistant_response(augmented_query)
 

@@ -1,7 +1,7 @@
 import glob
 import os
-import pickle
 
+import pinecone
 from dotenv import load_dotenv
 from langchain.document_loaders import (
     CSVLoader,
@@ -11,16 +11,17 @@ from langchain.document_loaders import (
     UnstructuredMarkdownLoader,
     UnstructuredWordDocumentLoader,
 )
+from langchain.document_loaders import UnstructuredURLLoader
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import \
-    FAISS  # TODO use Pinecone and https://github.com/lidiapierre/seo-chat-bot/blob/master/scraper-embedder.py
+from langchain.vectorstores import Pinecone
+
+from config import config
 
 if not load_dotenv():
     print("Missing .env file")
     exit(1)
 
-persist_directory = os.environ.get('PERSIST_DIRECTORY')
 source_directory = 'source_documents'
 embeddings_model_name = os.environ.get('HF_EMBEDDING_MODEL_NAME')
 chunk_size = 500  # TODO move to env
@@ -29,6 +30,11 @@ chunk_overlap = 50
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
 embeddings = HuggingFaceEmbeddings(model_name=embeddings_model_name)
+
+PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY')
+PINECONE_API_ENV = os.environ.get('PINECONE_ENVIRONMENT')
+
+index_name = os.environ.get('INDEX_NAME')
 
 LOADER_MAPPING = {
     ".csv": (CSVLoader, {}),
@@ -51,18 +57,30 @@ def load_single_document(file_path):
     raise ValueError(f"Unsupported file extension '{ext}'")
 
 
-def get_documents_chunks(source_dir, existing_docs):
+def get_documents_chunks_from_files():
     """
     Loads all documents from the source documents directory
-    #TODO check file extensions, add pooling, add list of files to ignore
+    #TODO check file extensions, add pooling
     """
-    all_files = glob.glob(f"{source_dir}/*")
-    all_docs = []
+    all_files = glob.glob(f"{source_directory}/*")
+    docs = []
     for f in all_files:
-        if f not in existing_docs:
-            all_docs.extend(load_single_document(f))
+        docs.extend(load_single_document(f))
 
-    chunks = text_splitter.split_documents(all_docs)
+    chunks = text_splitter.split_documents(docs)
+    return chunks
+
+
+def get_documents_chunks_from_urls():
+    urls = []
+    if config['github']:
+        urls.append(config['github'])
+    if config['linkedin']:
+        urls.append(config['linkedin'])
+    if config['other_urls']:
+        urls.extend(config['other_urls'])
+    loader = UnstructuredURLLoader(urls=urls)
+    chunks = text_splitter.split_documents(loader.load())
     return chunks
 
 
@@ -71,33 +89,27 @@ def main():
     Load documents and split in chunks
     #TODO add batching
     """
-    print(f"Loading documents from {source_directory}")  # TODO add support to read from config
 
-    print("Creating new vectorstore")
-    documents = get_documents_chunks(source_directory, [])
-    vector_store = FAISS.from_documents(documents, embeddings)  # TODO add persist
-    with open(f"persist/data.pkl", "wb") as f:
-        pickle.dump(vector_store, f)
+    pinecone.init(api_key=PINECONE_API_KEY,
+                  environment=PINECONE_API_ENV)
 
-    # if not os.path.exists(persist_directory):
-    # print("Creating new vectorstore")
-    # documents = get_documents_chunks(source_directory, [])
-    # vector_store = FAISS.from_documents(documents, embeddings) # TODO add persist
-    # with open(f"persist/data.pkl", "rb") as f:
-    #     pickle.dump(vector_store, f)
+    if index_name not in pinecone.list_indexes():
+        print(f"creating new index")
+        # we create a new index
+        pinecone.create_index(
+            name=index_name,
+            metric='cosine',
+            dimension=384  # TODO put to params
+        )
 
-    # else:
-    # db = FAISS(persist_directory=persist_directory, embedding_function=embeddings)
-    # collection = db.get()
-    # existing_docs = [metadata['source'] for metadata in collection['metadatas']]
-    # documents = get_documents_chunks(source_directory, existing_docs)
-    # vector_store = FAISS.from_documents(documents, embeddings)
+    documents = []
+    print(f"Loading documents from {source_directory}")
+    documents.extend(get_documents_chunks_from_files())
+    print(f"Reading config")
+    documents.extend(get_documents_chunks_from_urls())
+    Pinecone.from_documents(documents, embeddings, index_name=index_name)
 
-    if not documents:
-        print("No new documents to load")
-        exit(0)
-
-    print(f"Loaded new documents from {source_directory}")  # TODO logging instead of print
+    # TODO show progress bar with tqdm 'show_progress=True'
 
 
 if __name__ == "__main__":

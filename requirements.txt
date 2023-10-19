@@ -1,4 +1,3 @@
-# TODO use poetry for dependencies management
 openai
 langchain
 python-dotenv
@@ -12,4 +11,5 @@ sentence-transformers
 unstructured
 faiss-cpu
 pymupdf
-pickle
+pinecone-client
+python-magic-bin
