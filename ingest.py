@@ -12,10 +12,10 @@ from langchain.document_loaders import (
     UnstructuredWordDocumentLoader,
 )
 from langchain.document_loaders import UnstructuredURLLoader
-from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
 
+from models import get_embeddings
 from config import config
 
 if not load_dotenv():
@@ -23,13 +23,12 @@ if not load_dotenv():
     exit(1)
 
 source_directory = 'source_documents'
-embeddings_model_name = os.environ.get('HF_EMBEDDING_MODEL_NAME')
 chunk_size = 500  # TODO move to env
 chunk_overlap = 50
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
-embeddings = HuggingFaceEmbeddings(model_name=embeddings_model_name)
+embeddings = get_embeddings()
 
 PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY')
 PINECONE_API_ENV = os.environ.get('PINECONE_ENVIRONMENT')
