@@ -23,7 +23,7 @@ if not load_dotenv():
     logging.error("Missing .env file")
     exit(1)
 
-source_directory = 'source_documents'
+source_directory = os.environ.get('SOURCE_DIR')
 chunk_size = os.environ.get('CHUNK_SIZE')
 chunk_overlap = os.environ.get('CHUNK_OVERLAP')
 
@@ -60,7 +60,6 @@ def load_single_document(file_path):
 def get_documents_chunks_from_files():
     """
     Loads all documents from the source documents directory
-    #TODO check file extensions, add pooling
     """
     all_files = glob.glob(f"{source_directory}/*")
     docs = []
@@ -87,7 +86,6 @@ def get_documents_chunks_from_urls():
 def main():
     """
     Load documents and split in chunks
-    #TODO add batching
     """
 
     pinecone.init(api_key=PINECONE_API_KEY,
