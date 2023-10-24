@@ -3,7 +3,7 @@ import pinecone
 import os
 from dotenv import load_dotenv
 from langchain.vectorstores import Pinecone
-from models import get_llm, get_embeddings
+from models import get_llm, embeddings
 import openai
 
 from config import config
@@ -126,7 +126,6 @@ def page_setup():
 def main():
     page_setup()
     display_existing_messages()
-    embeddings = get_embeddings()
     query = st.chat_input("Ask me about my skills and expertise!")
     if query:
 

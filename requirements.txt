@@ -12,4 +12,3 @@ unstructured
 faiss-cpu
 pymupdf
 pinecone-client
-python-magic-bin

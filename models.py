@@ -34,3 +34,6 @@ def get_llm():
             "temperature": model_temperature,
             "max_length": 512}
                               )
+
+
+embeddings = get_embeddings()
