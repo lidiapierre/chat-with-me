@@ -6,5 +6,6 @@ config = {
     "other_urls": [
         "https://huggingface.co/lidiapierre",
         "https://lidiapierre.github.io"
-    ]
+    ],
+    "path_to_documents": "source_documents"
 }

@@ -23,9 +23,9 @@ if not load_dotenv():
     logging.error("Missing .env file")
     exit(1)
 
-source_directory = os.environ.get('SOURCE_DIR')
-chunk_size = os.environ.get('CHUNK_SIZE')
-chunk_overlap = os.environ.get('CHUNK_OVERLAP')
+source_directory = config["path_to_documents"]
+chunk_size = os.environ.get('CHUNK_SIZE', 500)
+chunk_overlap = os.environ.get('CHUNK_OVERLAP', 50)
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
@@ -34,7 +34,7 @@ embeddings = get_embeddings()
 PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY')
 PINECONE_API_ENV = os.environ.get('PINECONE_ENVIRONMENT')
 
-index_name = os.environ.get('INDEX_NAME')
+index_name = os.environ.get('INDEX_NAME', 'chatwithme')
 
 LOADER_MAPPING = {
     ".csv": (CSVLoader, {}),
