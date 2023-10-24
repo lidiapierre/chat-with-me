@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 
 import pinecone
@@ -15,16 +16,16 @@ from langchain.document_loaders import UnstructuredURLLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
 
-from models import get_embeddings
 from config import config
+from models import get_embeddings
 
 if not load_dotenv():
-    print("Missing .env file")
+    logging.error("Missing .env file")
     exit(1)
 
 source_directory = 'source_documents'
-chunk_size = 500  # TODO move to env
-chunk_overlap = 50
+chunk_size = os.environ.get('CHUNK_SIZE')
+chunk_overlap = os.environ.get('CHUNK_OVERLAP')
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
@@ -93,18 +94,20 @@ def main():
                   environment=PINECONE_API_ENV)
 
     if index_name not in pinecone.list_indexes():
-        print(f"creating new index")
+        test_query = embeddings.embed_query("test")
+        dimension = len(test_query)
+        logging.info(f"Creating new Pinecone index {index_name} of dimension {dimension}")
         # we create a new index
         pinecone.create_index(
             name=index_name,
             metric='cosine',
-            dimension=384  # TODO put to params
+            dimension=dimension
         )
 
     documents = []
-    print(f"Loading documents from {source_directory}")
+    logging.info(f"Loading documents from {source_directory}")
     documents.extend(get_documents_chunks_from_files())
-    print(f"Reading config")
+    logging.info(f"Reading `config.py`")
     documents.extend(get_documents_chunks_from_urls())
     Pinecone.from_documents(documents, embeddings, index_name=index_name)
 

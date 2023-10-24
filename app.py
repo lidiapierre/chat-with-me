@@ -1,15 +1,17 @@
-import streamlit as st
-import pinecone
+import logging
 import os
+
+import openai
+import pinecone
+import streamlit as st
 from dotenv import load_dotenv
 from langchain.vectorstores import Pinecone
-from models import get_llm, embeddings
-import openai
 
 from config import config
+from models import embeddings
 
 if not load_dotenv():
-    print("Missing .env file")
+    logging.error("Missing .env file")
     exit(1)
 
 PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY')
@@ -56,13 +58,13 @@ def generate_assistant_response(augmented_query):
         message_placeholder = st.empty()
         full_response = ""
         for response in openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # TODO!!!!
-            temperature=0,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": augmented_query},
-            ],
-            stream=True,
+                model="gpt-3.5-turbo",  # TODO!!!!
+                temperature=0,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": augmented_query},
+                ],
+                stream=True,
         ):
             full_response += response.choices[0].delta.get("content", "")
             message_placeholder.markdown(full_response + "▌")
@@ -128,7 +130,6 @@ def main():
     display_existing_messages()
     query = st.chat_input("Ask me about my skills and expertise!")
     if query:
-
         add_user_message_to_session(query)
         contexts = get_relevant_contexts(query, embeddings)
         augmented_query = augment_query(contexts, query)
