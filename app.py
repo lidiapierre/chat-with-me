@@ -52,7 +52,7 @@ End each sentence with a period.
 
 
 def generate_assistant_response(augmented_query):
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar='profile.png'):
         message_placeholder = st.empty()
         full_response = ""
         for response in openai.ChatCompletion.create(
